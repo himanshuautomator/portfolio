@@ -8,8 +8,8 @@ interface FormData {
   name: string;
   email: string;
   message: string;
-  _subject: string; // For email subject
-  _replyto: string; // For reply-to email
+  _subject: string;
+  _replyto: string;
 }
 
 interface FormErrors {
@@ -55,14 +55,12 @@ const Contact = () => {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // Name validation
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
     } else if (formData.name.trim().length < 2) {
       newErrors.name = 'Name must be at least 2 characters long';
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
@@ -70,7 +68,6 @@ const Contact = () => {
       newErrors.email = 'Please enter a valid email address';
     }
 
-    // Message validation
     if (!formData.message.trim()) {
       newErrors.message = 'Message is required';
     } else if (formData.message.trim().length < 10) {
@@ -84,16 +81,20 @@ const Contact = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => {
-      // If email field is being updated, also update _replyto
       if (name === 'email') {
         return { ...prev, [name]: value, _replyto: value };
       }
       return { ...prev, [name]: value };
     });
-    // Clear error when user starts typing
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
+  };
+
+  const encode = (data: { [key: string]: string }) => {
+    return Object.keys(data)
+      .map(key => encodeURIComponent(key) + "=" + encodeURIComponent(data[key]))
+      .join("&");
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -103,14 +104,13 @@ const Contact = () => {
 
     if (validateForm()) {
       try {
-        // Submit the form to Netlify
-        const response = await fetch('/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            'form-name': 'contact',
+        const response = await fetch("/", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: encode({
+            "form-name": "contact",
             ...formData
-          }).toString()
+          })
         });
 
         if (response.ok) {
@@ -152,7 +152,6 @@ const Contact = () => {
 
         <div className="mt-20">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-            {/* Contact Information */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -179,7 +178,6 @@ const Contact = () => {
               </div>
             </motion.div>
 
-            {/* Contact Form */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -199,22 +197,20 @@ const Contact = () => {
                   Sorry, there was an error sending your message. Please try again.
                 </div>
               )}
-              <form 
-                className="space-y-6" 
-                name="contact" 
-                method="POST" 
+              <form
+                name="contact"
+                method="POST"
                 data-netlify="true"
-                netlify-honeypot="bot-field"
+                data-netlify-honeypot="bot-field"
                 onSubmit={handleSubmit}
+                className="space-y-6"
               >
                 <input type="hidden" name="form-name" value="contact" />
-                <input type="hidden" name="_subject" value={formData._subject} />
-                <input type="hidden" name="_replyto" value={formData._replyto} />
-                <p className="hidden">
+                <div className="hidden">
                   <label>
                     Don't fill this out if you're human: <input name="bot-field" />
                   </label>
-                </p>
+                </div>
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                     Name
@@ -269,15 +265,17 @@ const Contact = () => {
                     <p className="mt-1 text-sm text-red-600">{errors.message}</p>
                   )}
                 </div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                    isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
-                  }`}
-                >
-                  {isSubmitting ? 'Sending...' : 'Send Message'}
-                </button>
+                <div>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                      isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {isSubmitting ? 'Sending...' : 'Send Message'}
+                  </button>
+                </div>
               </form>
             </motion.div>
           </div>

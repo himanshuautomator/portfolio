@@ -82,6 +82,12 @@ const Contact = () => {
     }
   };
 
+  const encode = (data: { [key: string]: string }) => {
+    return Object.keys(data)
+      .map(key => encodeURIComponent(key) + "=" + encodeURIComponent(data[key]))
+      .join("&");
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -89,14 +95,13 @@ const Contact = () => {
 
     if (validateForm()) {
       try {
-        const formDataToSend = new FormData();
-        Object.entries(formData).forEach(([key, value]) => {
-          formDataToSend.append(key, value);
-        });
-
-        const response = await fetch('/api/form', {
-          method: 'POST',
-          body: formDataToSend,
+        const response = await fetch("/", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: encode({
+            "form-name": "contact",
+            ...formData
+          })
         });
 
         if (response.ok) {
@@ -182,11 +187,19 @@ const Contact = () => {
                 </div>
               )}
               <form
+                name="contact"
+                method="POST"
+                data-netlify="true"
+                netlify-honeypot="bot-field"
                 onSubmit={handleSubmit}
                 className="space-y-6"
-                data-netlify="true"
-                name="contact"
               >
+                <input type="hidden" name="form-name" value="contact" />
+                <p className="hidden">
+                  <label>
+                    Don't fill this out if you're human: <input name="bot-field" />
+                  </label>
+                </p>
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                     Name

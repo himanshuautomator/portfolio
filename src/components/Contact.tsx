@@ -8,8 +8,6 @@ interface FormData {
   name: string;
   email: string;
   message: string;
-  _subject: string;
-  _replyto: string;
 }
 
 interface FormErrors {
@@ -22,9 +20,7 @@ const Contact = () => {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
-    message: '',
-    _subject: 'New Contact Form Submission',
-    _replyto: ''
+    message: ''
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -80,21 +76,10 @@ const Contact = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => {
-      if (name === 'email') {
-        return { ...prev, [name]: value, _replyto: value };
-      }
-      return { ...prev, [name]: value };
-    });
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
-  };
-
-  const encode = (data: { [key: string]: string }) => {
-    return Object.keys(data)
-      .map(key => encodeURIComponent(key) + "=" + encodeURIComponent(data[key]))
-      .join("&");
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -104,13 +89,14 @@ const Contact = () => {
 
     if (validateForm()) {
       try {
-        const response = await fetch("/", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: encode({
-            "form-name": "contact",
-            ...formData
-          })
+        const formDataToSend = new FormData();
+        Object.entries(formData).forEach(([key, value]) => {
+          formDataToSend.append(key, value);
+        });
+
+        const response = await fetch('/api/form', {
+          method: 'POST',
+          body: formDataToSend,
         });
 
         if (response.ok) {
@@ -118,9 +104,7 @@ const Contact = () => {
           setFormData({
             name: '',
             email: '',
-            message: '',
-            _subject: 'New Contact Form Submission',
-            _replyto: ''
+            message: ''
           });
         } else {
           setSubmitStatus('error');
@@ -198,19 +182,11 @@ const Contact = () => {
                 </div>
               )}
               <form
-                name="contact"
-                method="POST"
-                data-netlify="true"
-                data-netlify-honeypot="bot-field"
                 onSubmit={handleSubmit}
                 className="space-y-6"
+                data-netlify="true"
+                name="contact"
               >
-                <input type="hidden" name="form-name" value="contact" />
-                <div className="hidden">
-                  <label>
-                    Don't fill this out if you're human: <input name="bot-field" />
-                  </label>
-                </div>
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                     Name
